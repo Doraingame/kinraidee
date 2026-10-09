@@ -140,15 +140,18 @@ if(a&&b){
   $("submit").onclick=()=>{
     me.n=$("name").value.trim();
     const tb=enc(me);
-    replyURL=`${location.origin}${location.pathname}#a=${params.get("a")}&b=${tb}`;
+    // openExternalBrowser=1 makes LINE open the link in Safari, where the "open in app" button works.
+    replyURL=`${location.origin}${location.pathname}?openExternalBrowser=1#a=${params.get("a")}&b=${tb}`;
     hide("ask"); show("sent"); hide("submit"); show("share"); hide("copied");
     $("replyLink").value=replyURL;
     window.scrollTo(0,0);
   };
   const shareText=()=>`${me.n||"แฟน"} เลือกแล้ว! กดลิงก์นี้เพื่อดูร้านที่ตรงกัน`;
   async function copyReply(){
+    let ok=true;
     try{await navigator.clipboard.writeText(`${shareText()}\n${replyURL}`)}
-    catch(e){const f=$("replyLink");f.focus();f.select();f.setSelectionRange(0,f.value.length);document.execCommand("copy")}
+    catch(e){const f=$("replyLink");f.focus();f.select();f.setSelectionRange(0,f.value.length);try{ok=document.execCommand("copy")}catch(_){ok=false}}
+    $("copied").textContent=ok?"คัดลอกลิงก์แล้ว วางในแชตได้เลย":"คัดลอกอัตโนมัติไม่ได้ กดค้างที่ลิงก์ในกล่องแล้วเลือกคัดลอก";
     show("copied");
   }
   $("copyBtn").onclick=copyReply;
