@@ -38,6 +38,9 @@
   .note{background:var(--mint);color:var(--sage);border-radius:16px;padding:12px 14px;font-weight:600;margin-top:16px}
   .hidden{display:none!important}
   .big{font-size:56px;text-align:center;margin-top:30px}
+  .linkbox{display:flex;gap:8px;align-items:center;background:#fff;border:1px solid var(--line);border-radius:14px;padding:6px 6px 6px 14px;margin-top:22px}
+  .linkbox input{border:0;height:40px;padding:0;font-size:14px;color:var(--ink2);background:transparent;min-width:0;flex:1}
+  .linkbox button{flex:none;border:0;border-radius:10px;background:var(--blush);color:var(--coralDeep);font-family:"Prompt",sans-serif;font-weight:500;font-size:14px;padding:10px 14px;cursor:pointer}
 </style>
 </head>
 <body>
@@ -66,6 +69,7 @@
     <div class="big">💌</div>
     <h1 style="text-align:center">เหลืออีกขั้นเดียว</h1>
     <p class="muted" style="text-align:center;margin-top:6px">ส่งลิงก์คำตอบกลับไปให้ <b id="inviter2"></b><br>แอปจะหาร้านที่ตรงกันให้ทั้งคู่</p>
+    <div class="linkbox"><input id="replyLink" readonly aria-label="ลิงก์คำตอบ"><button id="copyBtn" type="button">คัดลอก</button></div>
     <div class="note" id="copied" style="text-align:center">คัดลอกลิงก์แล้ว วางในแชตได้เลย</div>
   </section>
 
@@ -114,7 +118,8 @@ if(a&&b){
   show("ask");
   const name=a.n||"แฟนคุณ";
   $("inviter").textContent=name; $("inviter2").textContent=name;
-  $("avatar").textContent=[...name].slice(0,2).join("");
+  const graphemes=t=>window.Intl&&Intl.Segmenter?[...new Intl.Segmenter("th",{granularity:"grapheme"}).segment(t)].map(x=>x.segment):[...t];
+  $("avatar").textContent=graphemes(name).slice(0,3).join("");
   const me={n:"",b:a.b??1,m:a.m??2,c:[],x:[],d:a.d??5};
 
   const chip=(label,on,cls="")=>{const el=document.createElement("span");el.className=`chip ${cls}${on?" on":""}`;el.textContent=label;el.setAttribute("role","button");return el;};
@@ -137,12 +142,19 @@ if(a&&b){
     const tb=enc(me);
     replyURL=`${location.origin}${location.pathname}#a=${params.get("a")}&b=${tb}`;
     hide("ask"); show("sent"); hide("submit"); show("share"); hide("copied");
+    $("replyLink").value=replyURL;
     window.scrollTo(0,0);
   };
+  const shareText=()=>`${me.n||"แฟน"} เลือกแล้ว! กดลิงก์นี้เพื่อดูร้านที่ตรงกัน`;
+  async function copyReply(){
+    try{await navigator.clipboard.writeText(`${shareText()}\n${replyURL}`)}
+    catch(e){const f=$("replyLink");f.focus();f.select();f.setSelectionRange(0,f.value.length);document.execCommand("copy")}
+    show("copied");
+  }
+  $("copyBtn").onclick=copyReply;
   $("share").onclick=async()=>{
-    const text=`${me.n||"แฟน"} เลือกแล้ว! กดลิงก์นี้เพื่อดูร้านที่ตรงกัน`;
-    if(navigator.share){try{await navigator.share({title:"กินไรดี",text,url:replyURL});return}catch(e){if(e.name==="AbortError")return}}
-    try{await navigator.clipboard.writeText(`${text}\n${replyURL}`);show("copied")}catch(e){prompt("คัดลอกลิงก์นี้",replyURL)}
+    if(navigator.share){try{await navigator.share({title:"กินไรดี",text:shareText(),url:replyURL});return}catch(e){if(e.name==="AbortError")return}}
+    copyReply();
   };
 } else {
   show("bad"); hide("submit");
